@@ -21,8 +21,8 @@ public class UserController {
     //создание пользователя;
     @PostMapping
     public User createUser(@Valid @RequestBody User user) throws ValidationException {
-        user.setId(++generatedId);
         validate(user);
+        user.setId(++generatedId);
         users.put(user.getId(), user);
         log.debug("Пользователь сохранен");
         return user;

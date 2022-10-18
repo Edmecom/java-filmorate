@@ -21,8 +21,8 @@ public class FilmController {
     //добавление фильма;
     @PostMapping
     public Film createFilm(@Valid @RequestBody Film film) throws ValidationException {
-        film.setId(++generatedId);
         validate(film);
+        film.setId(++generatedId);
         films.put(film.getId(), film);
         log.debug("Фильм добавлен");
         return film;
