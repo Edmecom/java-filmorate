@@ -2,12 +2,11 @@ package ru.yandex.practicum.filmorate.model;
 
 import lombok.Data;
 
-import javax.validation.constraints.Null;
 import java.time.LocalDate;
 
 @Data
 public class Film {
-    @Null
+
     private int id;
     private String name;
     private String description;
