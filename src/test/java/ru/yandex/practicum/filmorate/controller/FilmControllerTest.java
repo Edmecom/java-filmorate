@@ -1,97 +1,80 @@
 package ru.yandex.practicum.filmorate.controller;
 
-import org.junit.Assert;
 import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.web.client.TestRestTemplate;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.test.context.junit4.SpringRunner;
-import ru.yandex.practicum.filmorate.exception.ValidationException;
-import ru.yandex.practicum.filmorate.model.Film;
-import java.time.LocalDate;
+import org.springframework.http.MediaType;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
+import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
+import org.springframework.util.ResourceUtils;
 
-@RunWith(SpringRunner.class)
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@AutoConfigureMockMvc
+@ActiveProfiles("test")
 public class FilmControllerTest {
 
-    private Film crateTestFilm() {
-        return  new Film(
-                "Звёздные войны: Эпизод 1 — Скрытая угроза",
-                "фэнтэзи",
-                LocalDate.of(1999, 7, 29),
-                130
-        );
-    }
+    private static final String PATH = "/films";
 
     @Autowired
-    private TestRestTemplate template;
+    private MockMvc mockMvc;
 
-    // Неуспешное добавление - отсутствует название фильма.
+    //проверка метода получения списка фильмов
+    @Disabled
     @Test
-    public void createFilmNewFilmEmptyName() {
-        Film film = crateTestFilm();
-        film.setName(null);
-        HttpEntity<Film> request = new HttpEntity<>(film);
-        ResponseEntity<ValidationException> response = template.postForEntity(
-                "/films",
-                request,
-                ValidationException.class
-        );
-        Assert.assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+    public void getFilms() throws Exception {
+        mockMvc.perform(MockMvcRequestBuilders.get(PATH))
+                .andExpect(MockMvcResultMatchers.status().isOk())
+                .andExpect(MockMvcResultMatchers.content().json("[]"));
     }
 
-    // Неуспешное добавление - описание фильма длинее 200 символов.
     @Test
-    public void createFilmNewFilmTooLongDescription() {
-        Film film = crateTestFilm();
-        film.setDescription("Мирная и процветающая планета Набу. Торговая федерация, не желая платить налоги, " +
-                "вступает в прямой конфликт с королевой Амидалой, правящей на планете, что приводит к войне. " +
-                "На стороне королевы и республики в ней участвуют два рыцаря-джедая: учитель и ученик, " +
-                "Квай-Гон-Джин и Оби-Ван Кеноби. Вглядитесь в ночное небо. Нет, правда, вглядитесь! " +
-                "Не в то, которое над городом и которое освещено миллионом фонарей, окон и неоновых реклам. " +
-                "В другое. Темное небо. На нем ровным светом мерцают белесые камушки – мириады звезд. " +
-                "Далеких, манящих, завораживающих. Глядя на них, странное чувство закрадывается в душу: " +
-                "будто тоска по чему-то забытому, неуловимому, но смутно знакомому… А иногда яркая искра " +
-                "прорезает темноту свода – звезда упала. Чей-то мир рухнул.");
-        HttpEntity<Film> request = new HttpEntity<>(film);
-        ResponseEntity<ValidationException> response = template.postForEntity(
-                "/films",
-                request,
-                ValidationException.class
-        );
-        Assert.assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+    public void createFilm() throws Exception {
+        mockMvc.perform(MockMvcRequestBuilders.post(PATH)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(getContentFromFile("controller/create/request/film.json"))
+        )
+                .andExpect(MockMvcResultMatchers.status().isOk())
+                .andExpect(MockMvcResultMatchers.content().json(
+                        getContentFromFile("controller/create/response/film.json"))
+                );
+
+        mockMvc.perform(MockMvcRequestBuilders.post(PATH))
+                .andExpect(MockMvcResultMatchers.status().isOk())
+                .andExpect(MockMvcResultMatchers.content().json(
+                        getContentFromFile("controller/create/film.json"))
+                );
     }
 
-    // Неуспешное добавление - неверная дата релиза.
-    @Test
-    public void createFilmNewDateOfReliseTooOld() {
-        Film film = crateTestFilm();
-        film.setReleaseDate(LocalDate.of(1799, 7, 29));
-        HttpEntity<Film> request = new HttpEntity<>(film);
-        ResponseEntity<ValidationException> response = template.postForEntity(
-                "/films",
-                request,
-                ValidationException.class
-        );
-        Assert.assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
+    //проверка валийдации
+    @ParameterizedTest(name = "{0}")
+    @ValueSource(strings = {
+            "filmNameisBlank.json",
+            "filmDateEmpty.json"
+    })
+    void validate(String filename) throws Exception {
+        mockMvc.perform(MockMvcRequestBuilders.post(PATH)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(getContentFromFile(String.format("controller/create/request/%s", filename)))
+                )
+                .andExpect(MockMvcResultMatchers.status().is5xxServerError());
     }
 
-    // Неуспешное добавление - отрицательная продолжительность фильма.
-    @Test
-    public void createFilmNewNegativeDuration() {
-        Film film = crateTestFilm();
-        film.setDuration(-130);
-        HttpEntity<Film> request = new HttpEntity<>(film);
-        ResponseEntity<ValidationException> response = template.postForEntity(
-                "/films",
-                request,
-                ValidationException.class
-        );
-        Assert.assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+    private String getContentFromFile(final String fileName) {
+        try {
+            return Files.readString(ResourceUtils.getFile("classpath:" + fileName).toPath(),
+                    StandardCharsets.UTF_8);
+        } catch (final IOException e) {
+            throw new RuntimeException("Unable to open file", e);
+        }
     }
-
 }
