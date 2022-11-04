@@ -1,42 +1,52 @@
 package ru.yandex.practicum.filmorate.controller;
 
-
 import org.junit.Test;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Disabled;
-import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.web.client.TestRestTemplate;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
-import ru.yandex.practicum.filmorate.exception.ValidationException;
-import ru.yandex.practicum.filmorate.model.User;
+import org.springframework.util.ResourceUtils;
 
-import java.time.LocalDate;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
-class UserControllerTest {
+public class UserControllerTest {
 
     private static final String PATH = "/users";
 
     @Autowired
     private MockMvc mockMvc;
 
-    @Disabled
-    @Test
-    public void getUsers() throws Exception {
-        mockMvc.perform(MockMvcRequestBuilders.get(PATH))
-                .andExpect(MockMvcResultMatchers.status().isOk())
-                .andExpect(MockMvcResultMatchers.content().json("[]"));
+    @ParameterizedTest(name = "{0}")
+    @ValueSource(strings = {
+            "UserLoginEmpty.json",
+            "UserEmailDontContain@.json"
+    })
+    void validate(String filename) throws Exception {
+        mockMvc.perform(MockMvcRequestBuilders.post(PATH)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(getContentFromFile(String.format("controller/create/request/%s", filename)))
+                )
+                .andExpect(MockMvcResultMatchers.status().is4xxClientError());
+    }
+
+    private String getContentFromFile(final String fileName) {
+        try {
+            return Files.readString(ResourceUtils.getFile("classpath:" + fileName).toPath(),
+                    StandardCharsets.UTF_8);
+        } catch (final IOException e) {
+            throw new RuntimeException("Unable to open file", e);
+        }
     }
 }

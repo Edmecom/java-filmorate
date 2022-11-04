@@ -28,33 +28,6 @@ public class FilmControllerTest {
     @Autowired
     private MockMvc mockMvc;
 
-    //проверка метода получения списка фильмов
-    @Disabled
-    @Test
-    public void getFilms() throws Exception {
-        mockMvc.perform(MockMvcRequestBuilders.get(PATH))
-                .andExpect(MockMvcResultMatchers.status().isOk())
-                .andExpect(MockMvcResultMatchers.content().json("[]"));
-    }
-
-    @Test
-    public void createFilm() throws Exception {
-        mockMvc.perform(MockMvcRequestBuilders.post(PATH)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(getContentFromFile("controller/create/request/film.json"))
-        )
-                .andExpect(MockMvcResultMatchers.status().isOk())
-                .andExpect(MockMvcResultMatchers.content().json(
-                        getContentFromFile("controller/create/response/film.json"))
-                );
-
-        mockMvc.perform(MockMvcRequestBuilders.post(PATH))
-                .andExpect(MockMvcResultMatchers.status().isOk())
-                .andExpect(MockMvcResultMatchers.content().json(
-                        getContentFromFile("controller/create/film.json"))
-                );
-    }
-
     //проверка валийдации
     @ParameterizedTest(name = "{0}")
     @ValueSource(strings = {

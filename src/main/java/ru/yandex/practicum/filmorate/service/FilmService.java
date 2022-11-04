@@ -1,11 +1,11 @@
 package ru.yandex.practicum.filmorate.service;
 
-import lombok.SneakyThrows;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import ru.yandex.practicum.filmorate.exception.ValidationException;
+import javax.validation.ValidationException;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.storage.film.FilmStorage;
+import ru.yandex.practicum.filmorate.storage.film.InMemoryFilmStorage;
 
 import java.time.LocalDate;
 import java.util.Comparator;
@@ -13,49 +13,60 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
-public class FilmService extends AbstractService<Film>{
+public class FilmService {
 
-    UserService userStorage;
+
+
+    private final FilmStorage filmStorage;
 
     @Autowired
-    public FilmService(FilmStorage storage, UserService userStorage) {
-        this.storage = storage;
-        this.userStorage = userStorage;
+    public FilmService(InMemoryFilmStorage fileStorage) {
+        this.filmStorage = fileStorage;
     }
 
-    @SneakyThrows
-    @Override
-    protected void validate(Film data) {
-        if (data.getName() == null || data.getName().isEmpty()) {
-            throw new ValidationException("Film name invalid");
-        }
-        if (data.getDescription() != null && data.getDescription().length() > 200) {
-            throw new ValidationException("Film description invalid");
-        }
-        if (data.getReleaseDate() == null && data.getReleaseDate().isBefore(LocalDate.parse("1895-12-28"))) {
-            throw new ValidationException("Film release date invalid");
-        }
-        if (data.getDuration() <= 0) {
-            throw new ValidationException("Film duration invalid");
-        }
+
+
+    public void create(Film film) {
+        filmStorage.create(film);
     }
 
     public void addLike(long id, long userId) {
-        final Film film = storage.get(id);
-        userStorage.get(userId);
-        film.addLike(userId);
+        Film film = filmStorage.getById(id);
+        film.getUserIds().add(userId);
+        filmStorage.update(film);
     }
 
     public void removeLike(long id, long userId) {
-        final Film film = storage.get(id);
-        userStorage.get(userId);
-        film.removeLike(userId);
+        Film film = filmStorage.getById(id);
+        film.getUserIds().remove(userId);
+        filmStorage.update(film);
     }
 
-    public List<Film> getPopular(int count) {
-        return storage.getAll().stream()
-                .sorted(Comparator.comparingLong(Film::getRate).reversed())
-                .limit(count)
+    public List<Film> getPopular(String count) {
+        return filmStorage.getAll().stream()
+                .filter(film -> film.getUserIds() != null)
+                .sorted(Comparator.comparing(film -> film.getUserIds().size(), Comparator.reverseOrder()))
+                .limit(Long.parseLong(count))
                 .collect(Collectors.toList());
+    }
+
+    public Film getById(long id) {
+        return filmStorage.getById(id);
+    }
+
+    public void update(Film film) {
+        filmStorage.update(film);
+    }
+
+    public void delete(long id) {
+        filmStorage.delete(id);
+    }
+
+    public List<Film> getAll() {
+        return filmStorage.getAll();
+    }
+
+    public boolean isContainsFilm(long id) {
+        return filmStorage.isContains(id);
     }
 }
