@@ -1,92 +1,52 @@
 package ru.yandex.practicum.filmorate.controller;
 
-
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.Test;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.web.client.TestRestTemplate;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
-import ru.yandex.practicum.filmorate.exception.ValidationException;
-import ru.yandex.practicum.filmorate.model.User;
+import org.springframework.http.MediaType;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
+import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
+import org.springframework.util.ResourceUtils;
 
-import java.time.LocalDate;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 
-@ExtendWith(SpringExtension.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-class UserControllerTest {
+@AutoConfigureMockMvc
+@ActiveProfiles("test")
+public class UserControllerTest {
+
+    private static final String PATH = "/users";
 
     @Autowired
-    private TestRestTemplate template;
+    private MockMvc mockMvc;
 
-    private User createTestUser() {
-        return new User(
-                "practicum@yandex.ru",
-                "User",
-                "User1",
-                LocalDate.of(1987, 10, 22)
-        );
+    @ParameterizedTest(name = "{0}")
+    @ValueSource(strings = {
+            "UserLoginEmpty.json",
+            "UserEmailDontContain@.json"
+    })
+    void validate(String filename) throws Exception {
+        mockMvc.perform(MockMvcRequestBuilders.post(PATH)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(getContentFromFile(String.format("controller/create/request/%s", filename)))
+                )
+                .andExpect(MockMvcResultMatchers.status().is4xxClientError());
     }
 
-    // Неуспешное добавление - эл почта отсутствует.
-    @Test
-    public void createUserNewUserEmailIsEmpty() throws ValidationException {
-        User user = createTestUser();
-        user.setEmail(null);
-        HttpEntity<User> request = new HttpEntity<>(user);
-        ResponseEntity<ValidationException> response = template.postForEntity(
-                "/users",
-                request,
-                ValidationException.class
-        );
-        Assertions.assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
-    }
-
-    // Неуспешное добавление - неверный формат эл почты.
-    @Test
-    public void createUserNewUserEmail() {
-        User user = createTestUser();
-        user.setEmail("practicum.yandex.ru");
-        HttpEntity<User> request = new HttpEntity<>(user);
-        ResponseEntity<User> response = template.postForEntity(
-                "/users",
-                request,
-                User.class
-        );
-        Assertions.assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
-    }
-
-    // Неуспешное добавление - неверный логин.
-    @Test
-    public void createUserNewUserBadLogin() {
-        User user = createTestUser();
-        user.setLogin(null);
-        HttpEntity<User> request = new HttpEntity<>(user);
-        ResponseEntity<User> response = template.postForEntity(
-                "/users",
-                request,
-                User.class
-        );
-        Assertions.assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
-    }
-
-    // Неуспешное добавление - день рождения позже текущей даты.
-    @Test
-    public void createUserNewUserBirthdayInFuture() {
-        User user = createTestUser();
-        user.setId(1);
-        user.setBirthday(LocalDate.of(2087, 10, 22));
-        HttpEntity<User> request = new HttpEntity<>(user);
-        ResponseEntity<ValidationException> response = template.postForEntity(
-                "/users",
-                request,
-                ValidationException.class
-        );
-        //assertThat(response.getStatusCode(), is(HttpStatus.CREATED));
-        Assertions.assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+    private String getContentFromFile(final String fileName) {
+        try {
+            return Files.readString(ResourceUtils.getFile("classpath:" + fileName).toPath(),
+                    StandardCharsets.UTF_8);
+        } catch (final IOException e) {
+            throw new RuntimeException("Unable to open file", e);
+        }
     }
 }
