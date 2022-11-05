@@ -19,11 +19,11 @@ import java.util.*;
 @RequiredArgsConstructor
 public class FilmController {
 
-    private static final LocalDate dateFirstFilm = LocalDate.of(1895, 12, 28);
+    //private static final LocalDate dateFirstFilm = LocalDate.of(1895, 12, 28);
 
-    private static final int maxLengthDescription = 200;
+    //private static final int maxLengthDescription = 200;
 
-    private static long id = 0L;
+    //private static long id = 0L;
 
     private final FilmService service;
 
@@ -31,21 +31,21 @@ public class FilmController {
     @PostMapping("/films")
     @ResponseBody
     public ResponseEntity<Film> create(@Validated @RequestBody Film film) {
-        if (film.getUserIds() == null) {
+        /*if (film.getUserIds() == null) {
             film.setUserIds(new HashSet<>());
         }
         validate(film);
         film.setId(getId());
         service.create(film);
-        log.info("Creating film {}", film);
-        return new ResponseEntity<>(film, HttpStatus.CREATED);
+        log.info("Creating film {}", film);*/
+        return new ResponseEntity<>(service.create(film), HttpStatus.CREATED);
     }
 
     //обновление фильма;
     @PutMapping("/films")
     @ResponseBody
     public ResponseEntity<Film> update(@Validated @RequestBody final Film film) {
-        if (film.getUserIds() == null) {
+        /*if (film.getUserIds() == null) {
             film.setUserIds(new HashSet<>());
         }
         if (!service.isContainsFilm(film.getId())) {
@@ -53,46 +53,46 @@ public class FilmController {
         }
         validate(film);
         service.update(film);
-        log.info("Updating film {}", film);
-        return new ResponseEntity<>(film, HttpStatus.OK);
+        log.info("Updating film {}", film);*/
+        return new ResponseEntity<>(service.update(film), HttpStatus.OK);
     }
 
     //получение всех фильмов.
     @GetMapping("/films")
     @ResponseBody
     public List<Film> getAll() {
-        final List<Film> films = service.getAll();
-        log.info("Get all films {}", films.size());
-        return films;
+        /*List<Film> films = service.getAll();
+        log.info("Get all films {}", films.size());*/
+        return service.getAll();
     }
 
     @GetMapping("/films/{id}")
     @ResponseBody
     public Film getById(@PathVariable("id") long id) {
-        if (!service.isContainsFilm(id)) {
+        /*if (!service.isContainsFilm(id)) {
             throw new InputDataException("Film with this id was not found");
         }
-        log.info("Get film id={}", id);
+        log.info("Get film id={}", id);*/
         return service.getById(id);
     }
 
     //пользователь ставит лайк фильму
     @PutMapping("/films/{id}/like/{userId}")
     public void addLike(@PathVariable("id") long id, @PathVariable("userId") long userId) {
-        log.info("Add like film id={} from user={}", id, userId);
+        //log.info("Add like film id={} from user={}", id, userId);
         service.addLike(id, userId);
     }
 
     //пользователь удаляет лайк
     @DeleteMapping("/films/{id}/like/{userId}")
     public void removeLike(@PathVariable("id") long id, @PathVariable("userId") long userId) {
-        if (!service.isContainsFilm(id)) {
+        /*if (!service.isContainsFilm(id)) {
             throw new InputDataException("Film with this id was not found");
         }
         if (userId < 0) {
             throw new InputDataException("User with this id was not found");
         }
-        log.info("Remove like film id={} from user={}", id, userId);
+        log.info("Remove like film id={} from user={}", id, userId);*/
         service.removeLike(id, userId);
     }
 
@@ -101,12 +101,12 @@ public class FilmController {
     @GetMapping("/films/popular")
     @ResponseBody
     public List<Film> getPopular(@RequestParam(required = false) String count) {
-        log.info("Get popular film count=" + count);
-        String POPULAR_FILMS = "10";
-        return service.getPopular(Objects.requireNonNullElse(count, POPULAR_FILMS));
+        /*log.info("Get popular film count=" + count);
+        String POPULAR_FILMS = "10";*/
+        return service.getPopular(count);
     }
 
-    private void validate(Film film) {
+    /*private void validate(Film film) {
         if (film.getName().isBlank()) {
             log.warn("Error in Film input. Name is empty");
             throw new ValidationException("Film name invalid");
@@ -130,5 +130,5 @@ public class FilmController {
 
     public long getId() {
         return ++id;
-    }
+    }*/
 }
