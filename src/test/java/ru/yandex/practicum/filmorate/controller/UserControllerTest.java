@@ -1,7 +1,5 @@
 package ru.yandex.practicum.filmorate.controller;
 
-import org.junit.Test;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,12 +31,22 @@ public class UserControllerTest {
             "UserLoginEmpty.json",
             "UserEmailDontContain@.json"
     })
-    void validate(String filename) throws Exception {
+    void validateClientError(String filename) throws Exception {
         mockMvc.perform(MockMvcRequestBuilders.post(PATH)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(getContentFromFile(String.format("controller/create/request/%s", filename)))
                 )
                 .andExpect(MockMvcResultMatchers.status().is4xxClientError());
+    }
+
+    @ParameterizedTest(name = "{0}")
+    @ValueSource(strings = "UserSuccess.json")
+    void validateSuccess(String filename) throws Exception {
+        mockMvc.perform(MockMvcRequestBuilders.post(PATH)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(getContentFromFile(String.format("controller/create/request/%s", filename)))
+                )
+                .andExpect(MockMvcResultMatchers.status().isCreated());
     }
 
     private String getContentFromFile(final String fileName) {
