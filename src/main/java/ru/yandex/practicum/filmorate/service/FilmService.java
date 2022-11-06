@@ -54,7 +54,7 @@ public class FilmService {
     }
 
     public void removeLike(long id, long userId) {
-        if (!isContainsFilm(id)) {
+        if (isContainFilm(id)) {
             throw new InputDataException("Film with this id was not found");
         }
         if (userId < 0) {
@@ -77,7 +77,7 @@ public class FilmService {
     }
 
     public Film getById(long id) {
-        if (!isContainsFilm(id)) {
+        if (isContainFilm(id)) {
             throw new InputDataException("Film with this id was not found");
         }
         log.info("Get film id={}", id);
@@ -88,7 +88,7 @@ public class FilmService {
         if (film.getUserIds() == null) {
             film.setUserIds(new HashSet<>());
         }
-        if (!isContainsFilm(film.getId())) {
+        if (isContainFilm(film.getId())) {
             throw new InputDataException("Film with this id was not found");
         }
         validate(film);
@@ -106,8 +106,8 @@ public class FilmService {
         return filmStorage.getAll();
     }
 
-    private boolean isContainsFilm(long id) {
-        return filmStorage.isContains(id);
+    private boolean isContainFilm(long id) {
+        return !filmStorage.isContains(id);
     }
 
     private void validate(Film film) {

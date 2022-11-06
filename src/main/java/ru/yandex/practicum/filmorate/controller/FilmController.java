@@ -20,48 +20,45 @@ public class FilmController {
 
     //добавление фильма;
     @PostMapping("/films")
-    @ResponseBody
     public ResponseEntity<Film> create(@Validated @RequestBody Film film) {
         return new ResponseEntity<>(service.create(film), HttpStatus.CREATED);
     }
 
     //обновление фильма;
     @PutMapping("/films")
-    @ResponseBody
     public ResponseEntity<Film> update(@Validated @RequestBody final Film film) {
         return new ResponseEntity<>(service.update(film), HttpStatus.OK);
     }
 
     //получение всех фильмов.
     @GetMapping("/films")
-    @ResponseBody
-    public List<Film> getAll() {
-        return service.getAll();
+    public ResponseEntity<List<Film>> getAll() {
+        return new ResponseEntity<>(service.getAll(), HttpStatus.OK);
     }
 
     @GetMapping("/films/{id}")
-    @ResponseBody
-    public Film getById(@PathVariable("id") long id) {
-        return service.getById(id);
+    public ResponseEntity<Film> getById(@PathVariable("id") long id) {
+        return new ResponseEntity<>(service.getById(id), HttpStatus.OK);
     }
 
     //пользователь ставит лайк фильму
     @PutMapping("/films/{id}/like/{userId}")
-    public void addLike(@PathVariable("id") long id, @PathVariable("userId") long userId) {
+    public ResponseEntity<Void> addLike(@PathVariable("id") long id, @PathVariable("userId") long userId) {
         service.addLike(id, userId);
+        return new ResponseEntity<>(HttpStatus.OK);
     }
 
     //пользователь удаляет лайк
     @DeleteMapping("/films/{id}/like/{userId}")
-    public void removeLike(@PathVariable("id") long id, @PathVariable("userId") long userId) {
+    public ResponseEntity<Void> removeLike(@PathVariable("id") long id, @PathVariable("userId") long userId) {
         service.removeLike(id, userId);
+        return new ResponseEntity<>(HttpStatus.OK);
     }
 
     //возвращает список из первых count фильмов по количеству лайков.
     //если значение параметра count не задано, верните первые 10.
     @GetMapping("/films/popular")
-    @ResponseBody
-    public List<Film> getPopular(@RequestParam(required = false) String count) {
-        return service.getPopular(count);
+    public ResponseEntity<List<Film>> getPopular(@RequestParam(required = false) String count) {
+        return new ResponseEntity<>(service.getPopular(count), HttpStatus.OK);
     }
 }

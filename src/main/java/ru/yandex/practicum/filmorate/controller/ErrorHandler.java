@@ -13,7 +13,7 @@ import javax.validation.ValidationException;
 @Slf4j
 @Service
 @ControllerAdvice
-public class FilmControllerAdvise {
+public class ErrorHandler {
 
     @ExceptionHandler //для всех ситуаций, если искомый объект не найден
     public ResponseEntity<String> handleNotFoundException(InputDataException e) {
